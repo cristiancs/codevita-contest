@@ -1,4 +1,3 @@
-import struct,socket
 
 db = input()
 cantidad = input()
@@ -12,25 +11,36 @@ for line in db:
     rangos.append(data[0])
 
 
-def addressInNetwork3(ip,net):
-    '''This function allows you to check if on IP belogs to a Network'''
-    ipaddr = struct.unpack('=L',socket.inet_aton(ip))[0]
-    netaddr,bits = net.split('/')
-    netmask = struct.unpack('=L',socket.inet_aton(calcDottedNetmask(int(bits))))[0]
-    network = struct.unpack('=L',socket.inet_aton(netaddr))[0] & netmask
-    return (ipaddr & netmask) == (network & netmask)
+#Fixed from http://stackoverflow.com/a/29950808/2213659
+def ipToInt(ip):
+    o = list(map(int, ip.split('.')))
+    res = (16777216 * o[0]) + (65536 * o[1]) + (256 * o[2]) + o[3]
+    return res
 
-def calcDottedNetmask(mask):
-    bits = 0
-    for i in range(32-mask,32):
-        bits |= (1 << i)
-    return "%d.%d.%d.%d" % ((bits & 0xff000000) >> 24, (bits & 0xff0000) >> 16, (bits & 0xff00) >> 8 , (bits & 0xff))
+def isIpInSubnet(ip, ipNetwork, maskLength):
+    ipInt = ipToInt(ip)#my test ip, in int form
+
+    maskLengthFromRight = 32 - int(maskLength)
+
+    ipNetworkInt = ipToInt(ipNetwork) #convert the ip network into integer form
+    binString = "{0:b}".format(ipNetworkInt) #convert that into into binary (string format)
+
+    chopAmount = 0 #find out how much of that int I need to cut off
+    for i in range(maskLengthFromRight):
+        if i < len(binString):
+            chopAmount += int(binString[len(binString)-1-i]) * 2**i
+
+    minVal = ipNetworkInt-chopAmount
+    maxVal = minVal+2**maskLengthFromRight -1
+
+    return minVal <= ipInt and ipInt <= maxVal
 
 for i in range(int(cantidad)):
     ip = input()
     flag = False
     for cidr in rangos:
-        if addressInNetwork3(ip,cidr):
+        data = cidr.split("/")
+        if isIpInSubnet(ip,data[0],data[1]):
             print("Yes")
             flag = True
             break
