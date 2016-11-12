@@ -4,11 +4,14 @@ cantidad = input()
 
 
 db = open(db, "r")
-rangos = list()
+rangos = dict()
 
 for line in db:
     data = line.split(",")
-    rangos.append(data[0])
+    if(data[0].split(".")[0] in rangos.keys()):
+        rangos[data[0].split(".")[0]].append(data[0])
+    else:
+        rangos[data[0].split(".")[0]] = [(data[0])]
 
 
 #Fixed from http://stackoverflow.com/a/29950808/2213659
@@ -38,12 +41,15 @@ def isIpInSubnet(ip, ipNetwork, maskLength):
 for i in range(int(cantidad)):
     ip = input()
     flag = False
-    for cidr in rangos:
-        data = cidr.split("/")
-        if isIpInSubnet(ip,data[0],data[1]):
-            print("Yes")
-            flag = True
-            break
-    if not flag:
+    if (ip.split(".")[0] in rangos.keys()):
+        for cidr in rangos[ip.split(".")[0]]:
+            data = cidr.split("/")
+            if isIpInSubnet(ip,data[0],data[1]):
+                print("Yes")
+                flag = True
+                break
+        if not flag:
+            print("No")
+    else:
         print("No")
 db.close()
